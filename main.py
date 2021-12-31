@@ -246,7 +246,7 @@ def plot(cur: sqlite3.Cursor, args: argparse.Namespace) -> None:
 
     (fig, ax) = plt.subplots()
 
-    ax.scatter(x_durations, y_discharge_rates, label='avg. discharge rate', marker='o')
+    ax.scatter(x_durations, y_discharge_rates, label='discharge rate', marker='o')
     ax.hlines(y=mean_discharge_rate, xmin=0, xmax=max(x_durations),
               label=f'mean discharge rate: {mean_discharge_rate:.2f}', linestyle='--')
     # ax.scatter(x_durations, y_energy_losses, label=f'energy loss', marker='x')

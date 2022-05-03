@@ -13,7 +13,6 @@ import argparse
 import logging
 import re
 import sqlite3
-import subprocess
 import sys
 import time
 from pathlib import Path
@@ -62,14 +61,14 @@ def parse_args() -> argparse.Namespace:
     return result
 
 
-def get_dmi(string: str) -> Optional[str]:
+def get_bios_version() -> Optional[str]:
     """
-    Uses dmidecode to get a string from the computer's DMI table.
-    :param string: DMI string
-    :return: Value of the string
+    Gets the BIOS version from sysfs.
+    :return: BIOS version
     """
     try:
-        return subprocess.check_output(['/usr/bin/dmidecode', '--string', string]).decode().strip()
+        with open('/sys/class/dmi/id/bios_version', encoding='utf_8') as f:
+            return f.read()
     except Exception as e:
         logger.warning(e)
         return None
@@ -110,7 +109,7 @@ def get_battery(attribute: str) -> int:
 
 def init(db: str = DATABASE, tmpfile: str = TMPFILE) -> sqlite3.Cursor:
     """
-    Initializes setting and the database.
+    Initializes settings and the database.
     :param db: Filepath of the database
     :param tmpfile: Filepath to store sleep session data
     :return: Cursor for the database
@@ -156,7 +155,7 @@ def pre(cur: sqlite3.Cursor, args: argparse.Namespace) -> None:
         return
 
     cur.execute('INSERT INTO history (bios_version, sleep_mode, sleep_action, t0, e0) VALUES (?, ?, ?, ?, ?)',
-                (get_dmi('bios-version'), get_sleep_mode(), args.sleep_action,
+                (get_bios_version(), get_sleep_mode(), args.sleep_action,
                  round(time.time()), get_battery('energy_now')))
 
     with open(TMPFILE, 'w', encoding='utf_8') as f:

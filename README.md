@@ -15,10 +15,6 @@ This data can be later used to calculate and plot the discharge rate.
     - `matplotlib` for plotting historical data
 - `systemd` for automatic execution on sleep enter and exit
 
-### Optional
-
-- `dmidecode` for reading the BIOS version
-
 ## Installation
 
 - copy the script `main.py` to `/usr/local/bin/sntrack` and mark it as executable

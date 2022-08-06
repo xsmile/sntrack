@@ -68,7 +68,7 @@ def get_bios_version() -> Optional[str]:
     """
     try:
         with open('/sys/class/dmi/id/bios_version', encoding='utf_8') as f:
-            return f.read()
+            return f.read().strip()
     except Exception as e:
         logger.warning(e)
         return None
@@ -168,6 +168,9 @@ def post(cur: sqlite3.Cursor, args: argparse.Namespace) -> None:
     :param cur: Cursor of the database
     :param args: Namespace of the argument parser
     """
+    if is_on_ac():
+        return
+
     if not Path(TMPFILE).exists():
         return
 

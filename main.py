@@ -265,7 +265,7 @@ def plot(cur: sqlite3.Cursor, args: argparse.Namespace) -> None:
 
     plt.title(', '.join(title))
     ax.set_xlabel('duration (h)')
-    ax.set_ylabel('energy (Wh)')
+    ax.set_ylabel('energy (W)')
     (handles, labels) = ax.get_legend_handles_labels()
     handles.extend([
         mpatches.Patch(color='grey', label=f'est. duration (days): {est_duration_d:.1f}'),

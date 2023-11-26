@@ -96,16 +96,26 @@ def get_sleep_mode() -> str:
     return re.findall(r'\[(.*)\]', out)[0]
 
 
-def get_battery(attribute: str) -> int:
+def get_battery_energy(attribute_suffix: str) -> int:
     """
     Gets an attribute of the battery power supply class via sysfs.
     :return: Attribute value
     """
     for path in Path('/sys/class/power_supply').rglob('BAT*'):
-        with open(Path(path, attribute), encoding='utf_8') as f:
-            return int(f.read())
-    return 0
+        energy_path = Path(path, f'energy_{attribute_suffix}')
+        if energy_path.exists():
+            with open(energy_path, encoding='utf_8') as f:
+                return int(f.read())
 
+        charge_path = Path(path, f'charge_{attribute_suffix}')
+        if charge_path.exists():
+            with open(charge_path, encoding='utf_8') as f:
+                charge = int(f.read()) / 1000
+            with open(Path(path, 'voltage_min_design'), encoding='utf_8') as f:
+                voltage = int(f.read()) / 1000
+            return charge * voltage
+
+    return 0
 
 def init(db: str = DATABASE, tmpfile: str = TMPFILE) -> sqlite3.Cursor:
     """
@@ -156,7 +166,7 @@ def pre(cur: sqlite3.Cursor, args: argparse.Namespace) -> None:
 
     cur.execute('INSERT INTO history (bios_version, sleep_mode, sleep_action, t0, e0) VALUES (?, ?, ?, ?, ?)',
                 (get_bios_version(), get_sleep_mode(), args.sleep_action,
-                 round(time.time()), get_battery('energy_now')))
+                 round(time.time()), get_battery_energy('now')))
 
     with open(TMPFILE, 'w', encoding='utf_8') as f:
         f.write(str(cur.lastrowid))
@@ -178,7 +188,7 @@ def post(cur: sqlite3.Cursor, args: argparse.Namespace) -> None:
         cur_id = int(f.read())
 
     cur.execute('UPDATE history SET t1 = ?, e1 = ? WHERE id = ?',
-                (round(time.time()), get_battery('energy_now'), cur_id))
+                (round(time.time()), get_battery_energy('now'), cur_id))
 
     tmpfile = Path(TMPFILE)
     if tmpfile.exists():
@@ -243,7 +253,7 @@ def plot(cur: sqlite3.Cursor, args: argparse.Namespace) -> None:
         return
 
     mean_discharge_rate = sum(y_discharge_rates) / len(y_discharge_rates)
-    est_duration_d = get_battery('energy_full') / 1000000 / mean_discharge_rate / 24
+    est_duration_d = get_battery_energy('full') / 1000000 / mean_discharge_rate / 24
     total_time_slept_h = sum(x_durations)
 
     (fig, ax) = plt.subplots()
